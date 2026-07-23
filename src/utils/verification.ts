@@ -8,7 +8,7 @@ import {
 import { OTP_LENGTH } from '../constants/verification-flow';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
-const ALLOWED_EMAIL_DOMAINS = new Set(['brown.edu', 'risd.edu']);
+const ALLOWED_EMAIL_DOMAINS = new Set(['brown.edu', 'risd.edu', 'alumni.brown.edu']);
 
 type PendingVerification = {
 	email: string;

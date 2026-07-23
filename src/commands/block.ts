@@ -8,7 +8,7 @@ import {
 export const data = new SlashCommandBuilder()
 	.setName('block')
 	.setDescription(
-		'Blocks a role from viewing every channel except the excluded channel.',
+		'Blocks a role from viewing every channel except whitelisted channels.',
 	)
 	.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 	.addRoleOption(option =>
@@ -17,10 +17,10 @@ export const data = new SlashCommandBuilder()
 			.setDescription('The role to block from viewing channels.')
 			.setRequired(true),
 	)
-	.addChannelOption(option =>
+	.addStringOption(option =>
 		option
-			.setName('exclude')
-			.setDescription('The one channel that should remain visible.')
+			.setName('whitelist')
+			.setDescription('Channel mentions to keep visible, such as #verify #rules.')
 			.setRequired(true),
 	);
 
@@ -34,7 +34,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 	}
 
 	const role = interaction.options.getRole('role', true);
-	const excludedChannel = interaction.options.getChannel('exclude', true);
+	const whitelistInput = interaction.options.getString('whitelist', true);
+	const excludedChannelIds = new Set(
+		Array.from(whitelistInput.matchAll(/<#(\d+)>/g), match => match[1]),
+	);
+
+	if (excludedChannelIds.size === 0) {
+		await interaction.reply({
+			content:
+				'Please include at least one channel mention in the whitelist, such as #verify.',
+			flags: MessageFlags.Ephemeral,
+		});
+		return;
+	}
 
 	if (role.permissions.has(PermissionFlagsBits.Administrator)) {
 		await interaction.reply({
@@ -45,11 +57,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		return;
 	}
 
-	const channels = await interaction.guild.channels.fetch();
-
 	await interaction.deferReply({
 		flags: MessageFlags.Ephemeral,
 	});
+
+	const channels = await interaction.guild.channels.fetch();
+	const invalidChannelIds = [...excludedChannelIds].filter(
+		channelId => !channels.has(channelId) || channels.get(channelId)?.isThread(),
+	);
+
+	if (invalidChannelIds.length > 0) {
+		await interaction.editReply({
+			content: `These mentions are not channels in this server or refer to threads: ${invalidChannelIds.map(channelId => `<#${channelId}>`).join(', ')}.`,
+		});
+		return;
+	}
 
 	let updatedChannels = 0;
 	const failedChannels: string[] = [];
@@ -63,7 +85,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 			await channel.permissionOverwrites.edit(
 				role,
 				{
-					ViewChannel: channel.id === excludedChannel.id,
+					ViewChannel: excludedChannelIds.has(channel.id),
 				},
 				{
 					reason: `Applied by ${interaction.user.tag} via /block`,
@@ -84,6 +106,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 			: ` Failed to update ${failedChannels.length} channel(s): ${failedChannels.join(', ')}.`;
 
 	await interaction.editReply({
-		content: `Updated ${updatedChannels} channel overwrite(s) for ${role}. ${role} can still view ${excludedChannel}.${failureNote}`,
+		content: `Updated ${updatedChannels} channel overwrite(s) for ${role}. ${role} can still view ${[...excludedChannelIds].map(channelId => `<#${channelId}>`).join(', ')}.${failureNote}`,
 	});
 }

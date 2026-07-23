@@ -20,6 +20,7 @@ import {
 	OTP_INPUT_ID,
 	OTP_MODAL_ID,
 	VERIFY_BUTTON_ID,
+	WHY_VERIFY_BUTTON_ID,
 } from './constants/verification-flow';
 import { registerCommands } from './utils/deploy-cmds';
 import {
@@ -67,6 +68,15 @@ client.on(Events.InteractionCreate, async interaction => {
 		if (interaction.isButton()) {
 			if (interaction.customId === VERIFY_BUTTON_ID) {
 				await interaction.showModal(buildEmailModal());
+				return;
+			}
+
+			if (interaction.customId === WHY_VERIFY_BUTTON_ID) {
+				await interaction.reply({
+					content:
+						'The Brown RISD Game Developers Discord server is our main workspace, where members collaborate, share art and project assets, track progress, and discuss internal opportunities. Because these conversations often contain members’ original work and private information, we require verification before granting access to help protect their intellectual property, privacy, and personal safety.',
+					flags: MessageFlags.Ephemeral,
+				});
 				return;
 			}
 
