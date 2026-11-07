@@ -37,7 +37,7 @@ function requestButtons(requesterId: string) {
 
 export function createDoorman(roleId: string) {
 	if (!/^\d{17,20}$/.test(roleId)) {
-		throw new Error('ROLE_PING_ROLE_ID must be a Discord role ID.');
+		throw new Error('DOORMAN_ROLE_ID must be a Discord role ID.');
 	}
 	const requestsInProgress = new Set<string>();
 

@@ -32,10 +32,7 @@ jobs:
 
             - name: Deploy Docker container to Droplet
               uses: appleboy/ssh-action@v1
-              env:
-                  ROLE_PING_ROLE_ID: ${{ vars.ROLE_PING_ROLE_ID }}
               with:
-                  envs: ROLE_PING_ROLE_ID
                   host: ${{ secrets.DO_HOST }}
                   username: ${{ secrets.DO_USER }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -47,5 +44,4 @@ jobs:
                       docker run -d \
                         --restart unless-stopped \
                         -e "DOTENV_PRIVATE_KEY_PRODUCTION=${{ secrets.DOTENV_KEY }}"\
-                        -e ROLE_PING_ROLE_ID \
                         --name ${{ vars.BOT_NAME }} ${{ secrets.DOCKER_USERNAME }}/${{ vars.BOT_NAME }}:latest

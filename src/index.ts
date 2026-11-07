@@ -36,7 +36,7 @@ import {
 	verifySubmittedOtp,
 } from './utils/verification';
 
-const doormanRoleId = process.env.ROLE_PING_ROLE_ID?.trim();
+const doormanRoleId = process.env.DOORMAN_ROLE_ID?.trim();
 const doorman = doormanRoleId ? createDoorman(doormanRoleId) : undefined;
 
 const intents = [GatewayIntentBits.Guilds];
