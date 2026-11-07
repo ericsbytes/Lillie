@@ -24,7 +24,7 @@ import {
 	WHY_VERIFY_BUTTON_ID,
 } from './constants/verification-flow';
 import { registerCommands } from './utils/deploy-cmds';
-import { createRolePingClaims } from './utils/role-ping-claims';
+import { createDoorman } from './utils/doorman';
 import {
 	clearPendingVerification,
 	createPendingVerification,
@@ -36,24 +36,22 @@ import {
 	verifySubmittedOtp,
 } from './utils/verification';
 
-const rolePingRoleId = process.env.ROLE_PING_ROLE_ID?.trim();
-const rolePingClaims = rolePingRoleId
-	? createRolePingClaims(rolePingRoleId)
-	: undefined;
+const doormanRoleId = process.env.ROLE_PING_ROLE_ID?.trim();
+const doorman = doormanRoleId ? createDoorman(doormanRoleId) : undefined;
 
 const intents = [GatewayIntentBits.Guilds];
-if (rolePingClaims) {
+if (doorman) {
 	intents.push(GatewayIntentBits.GuildMessages);
 }
 
 const client = new Client({ intents });
 
-if (rolePingClaims) {
+if (doorman) {
 	client.on(Events.MessageCreate, async message => {
 		try {
-			await rolePingClaims.replyToRolePing(message);
+			await doorman.handleRolePing(message);
 		} catch (error) {
-			console.error('Failed to reply to role ping.', error);
+			console.error('Doorman failed to post a door request.', error);
 		}
 	});
 }
@@ -86,7 +84,7 @@ client.on(Events.InteractionCreate, async interaction => {
 		}
 
 		if (interaction.isButton()) {
-			if (await rolePingClaims?.handleRequestButton(interaction)) {
+			if (await doorman?.handleRequestButton(interaction)) {
 				return;
 			}
 
@@ -253,10 +251,10 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 async function start() {
-	if (rolePingClaims) {
+	if (doorman) {
 		const mongoUri = process.env.MONGODB_URI?.trim();
 		if (!mongoUri) {
-			throw new Error('MONGODB_URI is required when role ping claims are enabled.');
+			throw new Error('MONGODB_URI is required when Doorman is enabled.');
 		}
 		await connect(mongoUri);
 	}

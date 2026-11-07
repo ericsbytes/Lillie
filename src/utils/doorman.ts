@@ -14,12 +14,12 @@ const CLAIM_BUTTON_PREFIX = 'role-ping-claim:';
 const CANCEL_BUTTON_PREFIX = 'role-ping-cancel:';
 const allowedMentions = { parse: [], repliedUser: false } as const;
 
-const RolePingClaimTotal = model('RolePingClaimTotal', new Schema(
+const DoormanClaimTotal = model('DoormanClaimTotal', new Schema(
 	{
 		_id: { type: String, required: true },
 		claims: { type: Number, required: true },
 	},
-	{ collection: 'role_ping_claim_totals', versionKey: false },
+	{ collection: 'doorman_claim_totals', versionKey: false },
 ));
 
 function requestButtons(requesterId: string) {
@@ -35,14 +35,14 @@ function requestButtons(requesterId: string) {
 	);
 }
 
-export function createRolePingClaims(roleId: string) {
+export function createDoorman(roleId: string) {
 	if (!/^\d{17,20}$/.test(roleId)) {
 		throw new Error('ROLE_PING_ROLE_ID must be a Discord role ID.');
 	}
 	const requestsInProgress = new Set<string>();
 
 	return {
-		async replyToRolePing(message: Message) {
+		async handleRolePing(message: Message) {
 			if (
 				!message.inGuild() ||
 				message.author.bot ||
@@ -141,7 +141,7 @@ export function createRolePingClaims(roleId: string) {
 				}
 
 				try {
-					await RolePingClaimTotal.updateOne(
+					await DoormanClaimTotal.updateOne(
 						{ _id: user.id },
 						{ $inc: { claims: 1 } },
 						{ upsert: true },
