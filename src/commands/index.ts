@@ -4,6 +4,7 @@ import type {
 	SlashCommandOptionsOnlyBuilder,
 } from 'discord.js';
 import * as block from './block';
+import * as leaderboard from './leaderboard';
 import * as send from './send';
 
 export type Command = {
@@ -11,7 +12,7 @@ export type Command = {
 	execute(interaction: ChatInputCommandInteraction): Promise<void>;
 };
 
-const commandList: Command[] = [send, block];
+const commandList: Command[] = [send, block, leaderboard];
 
 export const commands = new Map(
 	commandList.map(command => [command.data.name, command]),

@@ -22,6 +22,14 @@ const DoormanClaimTotal = model('DoormanClaimTotal', new Schema(
 	{ collection: 'doorman_claim_totals', versionKey: false },
 ));
 
+export function getDoormanLeaderboard() {
+	return DoormanClaimTotal.find()
+		.sort({ claims: -1, _id: 1 })
+		.limit(10)
+		.lean()
+		.exec();
+}
+
 function requestButtons(requesterId: string) {
 	return new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
