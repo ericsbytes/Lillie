@@ -8,6 +8,7 @@ import {
 	type InteractionReplyOptions,
 	MessageFlags,
 } from 'discord.js';
+import { connect } from 'mongoose';
 import { commands } from './commands';
 import { config } from './config';
 import {
@@ -23,6 +24,7 @@ import {
 	WHY_VERIFY_BUTTON_ID,
 } from './constants/verification-flow';
 import { registerCommands } from './utils/deploy-cmds';
+import { createRolePingClaims } from './utils/role-ping-claims';
 import {
 	clearPendingVerification,
 	createPendingVerification,
@@ -34,9 +36,27 @@ import {
 	verifySubmittedOtp,
 } from './utils/verification';
 
-const client = new Client({
-	intents: [GatewayIntentBits.Guilds],
-});
+const rolePingRoleId = process.env.ROLE_PING_ROLE_ID?.trim();
+const rolePingClaims = rolePingRoleId
+	? createRolePingClaims(rolePingRoleId)
+	: undefined;
+
+const intents = [GatewayIntentBits.Guilds];
+if (rolePingClaims) {
+	intents.push(GatewayIntentBits.GuildMessages);
+}
+
+const client = new Client({ intents });
+
+if (rolePingClaims) {
+	client.on(Events.MessageCreate, async message => {
+		try {
+			await rolePingClaims.replyToRolePing(message);
+		} catch (error) {
+			console.error('Failed to reply to role ping.', error);
+		}
+	});
+}
 
 client.once(Events.ClientReady, async readyClient => {
 	console.log(`Logged in as ${readyClient.user.tag}!`);
@@ -66,6 +86,10 @@ client.on(Events.InteractionCreate, async interaction => {
 		}
 
 		if (interaction.isButton()) {
+			if (await rolePingClaims?.handleRequestButton(interaction)) {
+				return;
+			}
+
 			if (interaction.customId === VERIFY_BUTTON_ID) {
 				await interaction.showModal(buildEmailModal());
 				return;
@@ -228,4 +252,15 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
-void client.login(process.env.DISCORD_BOT_TOKEN);
+async function start() {
+	if (rolePingClaims) {
+		const mongoUri = process.env.MONGODB_URI?.trim();
+		if (!mongoUri) {
+			throw new Error('MONGODB_URI is required when role ping claims are enabled.');
+		}
+		await connect(mongoUri);
+	}
+	await client.login(process.env.DISCORD_BOT_TOKEN);
+}
+
+void start();
