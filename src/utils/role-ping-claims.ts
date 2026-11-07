@@ -8,6 +8,7 @@ import {
 	type Message,
 } from 'discord.js';
 import { model, Schema } from 'mongoose';
+import { config } from '../config';
 
 const CLAIM_BUTTON_PREFIX = 'role-ping-claim:';
 const CANCEL_BUTTON_PREFIX = 'role-ping-cancel:';
@@ -67,12 +68,12 @@ export function createRolePingClaims(roleId: string) {
 				return false;
 			}
 
-			const { guildId, message, user } = interaction;
+			const { message, user } = interaction;
 			const claimMessageId = message.reference?.messageId ?? message.id;
 			const prefix = isCancel ? CANCEL_BUTTON_PREFIX : CLAIM_BUTTON_PREFIX;
 			const requesterId = interaction.customId.slice(prefix.length);
 			if (
-				!guildId ||
+				!interaction.inGuild() ||
 				user.bot ||
 				message.author.id !== interaction.client.user.id
 			) {
@@ -88,6 +89,21 @@ export function createRolePingClaims(roleId: string) {
 					flags: MessageFlags.Ephemeral,
 				});
 				return true;
+			}
+
+			if (!isCancel) {
+				const { roles } = interaction.member;
+				const needsVerification = Array.isArray(roles)
+					? roles.includes(config.roleToRemove)
+					: roles.cache.has(config.roleToRemove);
+				if (needsVerification) {
+					await interaction.reply({
+						content:
+							'🪼 Only Brown/RISD students can help out! Please verify yourself in <#1490480367013069010>.',
+						flags: MessageFlags.Ephemeral,
+					});
+					return true;
+				}
 			}
 
 			if (requestsInProgress.has(claimMessageId)) {
