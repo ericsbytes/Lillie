@@ -10,7 +10,7 @@ export const doormanMessages = {
 	cancelled: (requesterId: string) =>
 		`🪄 Nevermind, <@${requesterId}> has cancelled their request!`,
 	expired: (requesterId: string) =>
-		`🍄 Nevermind, <@${requesterId}>'s request has expired.`,
+		`🍡 Nevermind, <@${requesterId}>'s request has expired.`,
 	cancelDenied: 'Only the requester or a moderator can cancel this request.',
 	selfClaimDenied: 'Someone else has to claim your request.',
 	verificationRequired:
